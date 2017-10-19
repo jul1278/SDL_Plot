@@ -84,8 +84,7 @@ int main(int argc, char* argv[]) {
         return 0; 
     }
 
-
-
+    // Main loop
     while(1) {
 
         SDL_Event event;
@@ -98,11 +97,8 @@ int main(int argc, char* argv[]) {
 
                 SDL_GetWindowSize(sdlInfo.window, &windowWidth, &windowHeight); 
 
-                // SDL_RenderPresent(sdlInfo.renderer);
-
                 auto texture = SDL_CreateTexture(sdlInfo.renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, windowWidth, windowHeight);
-                
-                // TODO: 
+
                 SDLPlotConfiguration config; 
                 config.leftMargin = 50; 
                 config.rightMargin = 50;
@@ -129,7 +125,6 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-
     
     return 0; 
 }

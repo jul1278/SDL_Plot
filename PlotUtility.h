@@ -1,4 +1,6 @@
 // PlotUtility.h
+#ifndef PLOTUTILITY_H
+#define PLOTUTILITY_H
 
 #include <iostream>
 #include <exception>
@@ -198,10 +200,13 @@ void DrawGrid(SDL_Renderer* renderer, const DrawGridInfo& drawGridInfo) {
 
     SDL_SetRenderDrawColor(renderer, drawGridInfo.color >> 24, (drawGridInfo.color & 0x00ff0000) >> 16, (drawGridInfo.color & 0x0000ff00) >> 8, (drawGridInfo.color & 0x000000ff)); 
 
-    unsigned int xSpacing = drawGridInfo.width / drawGridInfo.xCount; 
-    unsigned int ySpacing = drawGridInfo.height / drawGridInfo.yCount;
+    // TODO: fix division by zero below 
 
-    for (auto x = xSpacing; x < drawGridInfo.width; x += xSpacing) {
+    unsigned int xSpacing = (drawGridInfo.width - drawGridInfo.x) / (drawGridInfo.xCount - 1); 
+    unsigned int ySpacing = (drawGridInfo.height - drawGridInfo.y) / (drawGridInfo.yCount - 1);
+
+    for (auto x = drawGridInfo.x; x <= drawGridInfo.width; x += xSpacing) {
+        
         if (drawGridInfo.dotted) {
             DrawDottedLine(renderer, drawGridInfo.color, x, drawGridInfo.y, x, drawGridInfo.height, 10, 5);
         } else {
@@ -209,7 +214,7 @@ void DrawGrid(SDL_Renderer* renderer, const DrawGridInfo& drawGridInfo) {
         }
     }
 
-    for (auto y = ySpacing; y < drawGridInfo.height; y += ySpacing) {
+    for (auto y = drawGridInfo.y; y <= (drawGridInfo.height + drawGridInfo.y); y += ySpacing) {
         
         if (drawGridInfo.dotted) {
             DrawDottedLine(renderer, drawGridInfo.color, drawGridInfo.x, y, drawGridInfo.width, y, 10, 5);
@@ -218,3 +223,5 @@ void DrawGrid(SDL_Renderer* renderer, const DrawGridInfo& drawGridInfo) {
         }
     }
 }
+
+#endif // PLOTUTILITY_H

@@ -1,7 +1,13 @@
+#ifndef SDLPLOT_H
+#define SDLPLOT_H
+
 // ISDLPlot
 #include <memory>
 #include <vector>
+#include <list>
+#include <tuple>
 
+#include "PlotUtility.h"
 #include "SDL.h"
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -28,6 +34,8 @@ struct SDLPlotConfiguration {
 
     int plotWidth;
     int plotHeight; 
+
+    int axisThiccness; 
 
     float topMargin;
     float bottomMargin; 
@@ -58,7 +66,16 @@ class SDLPlot {
 
     SDL_Renderer* renderer; 
     SDL_Texture* texture;
-    
+
+    struct Series {
+        std::vector<int> xData;  
+        std::vector<int> yData;
+
+        uint32_t color; 
+    }; 
+
+    std::list<Series> dataSeries;
+     
     SDLPlotConfiguration plotConfiguration; 
 
 public:
@@ -85,6 +102,19 @@ public:
         SDL_SetRenderTarget(this->renderer, this->texture); 
         SDL_RenderClear(this->renderer); 
 
+        // draw grid
+        DrawGridInfo gridInfo;
+        gridInfo.color = 0x4f4f4fff;  
+        gridInfo.x = this->plotConfiguration.leftMargin;
+        gridInfo.y = this->plotConfiguration.topMargin; 
+        gridInfo.width = this->plotConfiguration.plotWidth - this->plotConfiguration.rightMargin; 
+        gridInfo.height = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin;
+        gridInfo.xCount = 3; 
+        gridInfo.yCount = 3;
+        gridInfo.dotted = false; 
+
+        DrawGrid(this->renderer, gridInfo); 
+
         SDL_SetRenderDrawColor(this->renderer, 0xFF, 0xFF, 0xFF, 0xFF); 
 
         // draw y axis
@@ -96,8 +126,8 @@ public:
         auto y = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin; 
         SDL_RenderDrawLine(this->renderer, this->plotConfiguration.leftMargin, y, x2, y); 
 
-        // draw grid
 
+        
         // draw titles 
 
         // draw data onto plot
@@ -105,6 +135,14 @@ public:
         // TODO: draw annotation/captions etc
 
         SDL_RenderCopy(this->renderer, this->texture, nullptr, nullptr); 
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------
+    // Name:
+    // Desc:
+    //-------------------------------------------------------------------------------------------------------------------
+    void Plot(const std::vector<int>& xData, const std::vector<int>& yData) {
+
     }
 
 private:
@@ -126,6 +164,17 @@ private:
 
         return true; 
     }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Name:
+    // Desc:
+    //------------------------------------------------------------------------------------------------------------------
+    void PlotData() {
+        for (auto series : this->dataSeries) {
+
+        }
+    }
 };
 
 
+#endif // SDLPLOT_H
