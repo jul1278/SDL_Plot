@@ -9,6 +9,8 @@
 
 #include "PlotUtility.h"
 #include "SDL.h"
+#include "SDL_ttf.h"
+
 
 //----------------------------------------------------------------------------------------------------------------------
 // Name: SDLPlotConfiguration
@@ -67,6 +69,14 @@ class SDLPlot {
     SDL_Renderer* renderer; 
     SDL_Texture* texture;
 
+    TTF_Font* font; 
+
+    SDL_Texture* titleTextTexture;
+    SDL_Texture* xAxisTextTexture;
+    SDL_Texture* leftYAxisTextTexture;
+    SDL_Texture* rightYAxisTextTexture;
+
+
     struct Series {
         std::vector<int> xData;  
         std::vector<int> yData;
@@ -85,7 +95,14 @@ public:
     // Desc:
     //------------------------------------------------------------------------------------------------------------------
     SDLPlot(SDL_Renderer* renderer, SDL_Texture* texture, const SDLPlotConfiguration& configuration) 
-        : renderer(renderer), texture(texture), plotConfiguration(configuration) {}
+        : renderer(renderer), texture(texture), plotConfiguration(configuration) 
+    {
+        this->font = TTF_OpenFont("OxygenMono-Regular.ttf", 30); 
+
+        SDL_Color color = {0xff, 0xff, 0xff, 0xff};
+        SDL_Surface* textSurface = TTF_RenderText_Solid(this->font, "Plot Title", color); 
+        this->titleTextTexture = SDL_CreateTextureFromSurface(this->renderer, textSurface); 
+    }
 
     ~SDLPlot() {}
 
@@ -126,9 +143,17 @@ public:
         auto y = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin; 
         SDL_RenderDrawLine(this->renderer, this->plotConfiguration.leftMargin, y, x2, y); 
 
+        auto textWidth = (this->plotConfiguration.plotWidth < 200) ? 0.33f * this->plotConfiguration.plotWidth : 200; 
+        auto textHeight = 0.8f * this->plotConfiguration.topMargin; 
 
+        SDL_Rect textRect; 
+        textRect.x = (this->plotConfiguration.plotWidth - textWidth) / 2;
+        textRect.y = (this->plotConfiguration.topMargin - textHeight) / 2; 
+        textRect.w = textWidth; 
+        textRect.h = textHeight;  
         
         // draw titles 
+        SDL_RenderCopy(this->renderer, this->titleTextTexture, NULL, &textRect); 
 
         // draw data onto plot
 
