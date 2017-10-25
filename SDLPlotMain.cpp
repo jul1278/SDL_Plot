@@ -5,9 +5,9 @@
 
 #include "PlotUtility.h"
 
-//#include "CsvImport.h"
 #include "SDLPlot.h"
 #include "SDL.h"
+#include "SDL_ttf.h"
 
 #undef main
 
@@ -64,6 +64,17 @@ SDLInfo SetupSDL(int windowWidth, int windowHeight) {
         info.isError = true; 
         return info;
     } 
+
+    // init SDL_ttf
+	if (TTF_Init() == -1) {
+		auto error = TTF_GetError(); 
+		SDL_DestroyWindow(info.window); 
+		SDL_DestroyRenderer(info.renderer); 
+        SDL_Quit(); 
+        
+        info.isError = true; 
+		return info; 
+	}
 
     info.isError = false; 
     return info; 
