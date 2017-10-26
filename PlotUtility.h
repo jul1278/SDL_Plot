@@ -5,6 +5,7 @@
 #include <iostream>
 #include <exception>
 #include <cstring>
+#include <functional>
 
 #include "SDL.h"
 
@@ -22,6 +23,13 @@
     const uint32_t amask = 0xff000000;
 #endif
 
+// DrawIntervalInfo
+struct DrawIntervalInfo {
+    SDL_Renderer* renderer;
+    int x; 
+    int y; 
+    int index; 
+};
 
 // DrawGridInfo
 struct DrawGridInfo {
@@ -243,6 +251,72 @@ void DrawGrid(SDL_Renderer* renderer, const DrawGridInfo& drawGridInfo) {
         }
 
         accum += ySpacingf; 
+    }
+}
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------
+// Name: DrawOnRepeatingInterval
+// Desc: 
+//---------------------------------------------------------------------------------------------------------------------------------------------------
+void DrawOnRepeatingInterval(
+    SDL_Renderer* renderer,
+    const int x1, 
+    const int y1, 
+    const int x2, 
+    const int y2, 
+    const int count, 
+    const float angle, 
+    const bool perpendicularToTangent,
+    const bool includeEndPoints,
+    std::function<void(const DrawIntervalInfo& info)> func
+) {
+
+    // todo: swawp x1 x2 y1 y2 if greater
+
+    auto adjustCount = (includeEndPoints) ? count - 2 : count; 
+
+    auto xSpacef = (x2 != x1) ? (float) (x2 - x1) / adjustCount : 0.0f; 
+    auto ySpacef = (y2 != y1) ? (float) (y2 - y1) / adjustCount : 0.0f; 
+
+    int xSpace = xSpacef; 
+    int ySpace = ySpacef; 
+
+    auto xAccum = (float) x1; 
+    auto yAccum = (float) y1; 
+
+    int x = x1; 
+    int y = y1;
+    
+    // if NOT including endpoints then move forward
+    if (!includeEndPoints) {
+        x += xSpace; 
+        y += ySpace; 
+    }
+    
+    struct DrawIntervalInfo drawIntervalInfo ;
+
+    for (auto i = 0; i < count; i++) {
+
+        while (xAccum > x) {
+            x++;
+        }
+
+        while (yAccum > y) {
+            y++; 
+        }
+        
+        drawIntervalInfo.index = i; 
+        drawIntervalInfo.x = x;
+        drawIntervalInfo.y = y;
+        drawIntervalInfo.renderer = renderer; 
+        
+        func(drawIntervalInfo); 
+        
+        x += xSpace; 
+        y += ySpace; 
+
+        xAccum += xSpacef; 
+        yAccum += ySpacef; 
     }
 }
 

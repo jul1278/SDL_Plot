@@ -11,6 +11,8 @@
 
 #undef main
 
+const int backColor = 0xffafafaf; 
+
 //---------------------------------------------------------------------------------------------------------------------------------------------------
 //  SetupSDL
 //---------------------------------------------------------------------------------------------------------------------------------------------------
@@ -103,7 +105,7 @@ int main(int argc, char* argv[]) {
         if(SDL_PollEvent(&event)) {
 
             if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                SDL_SetRenderDrawColor(sdlInfo.renderer, 0x00, 0x00, 0x00, 0xff);
+                SDL_SetRenderDrawColor(sdlInfo.renderer, 0x2f, 0x2f, 0x2f, 0xff);
                 SDL_RenderClear(sdlInfo.renderer);
 
                 SDL_GetWindowSize(sdlInfo.window, &windowWidth, &windowHeight); 
@@ -126,8 +128,8 @@ int main(int argc, char* argv[]) {
             
                 // now render texture to the screen
                 SDL_RenderCopyEx(sdlInfo.renderer, texture, nullptr, nullptr, 0, nullptr, SDL_FLIP_NONE); 
-                SDL_RenderPresent(sdlInfo.renderer);
 
+                SDL_RenderPresent(sdlInfo.renderer);
                 SDL_DestroyTexture(texture);                 
             }
 

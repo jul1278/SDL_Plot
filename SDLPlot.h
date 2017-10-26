@@ -104,7 +104,7 @@ public:
         SDL_FreeSurface(textSurface);
         TTF_CloseFont(font);
         
-        font = TTF_OpenFont("OxygenMono-Regular.ttf", 40);
+        font = TTF_OpenFont("OxygenMono-Regular.ttf", 15);
 
         textSurface = TTF_RenderText_Solid(font, "Y Axis", color); 
         this->leftYAxisTextTexture = SDL_CreateTextureFromSurface(this->renderer, textSurface);
@@ -166,6 +166,9 @@ public:
         auto y = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin; 
         SDL_RenderDrawLine(this->renderer, this->plotConfiguration.leftMargin, y, x2, y); 
 
+        // draw spikes on axis
+        this->DrawAxisIncrements(gridInfo);
+
         // draw titles
         this->DrawTitles();
         
@@ -179,28 +182,32 @@ public:
     // Desc:
     //-------------------------------------------------------------------------------------------------------------------
     void Plot(const std::vector<int>& xData, const std::vector<int>& yData) {
-
+        
     }
 
 private:
+
     //------------------------------------------------------------------------------------------------------------------
     // Name: DrawTitles
     // Desc:
     //------------------------------------------------------------------------------------------------------------------
     bool DrawTitles() {
+
+        // TODO: factor out some functions here
+
         int tw, th; 
         SDL_QueryTexture(this->titleTextTexture, NULL, NULL, &tw, &th); 
 
         auto textHeight = 0.8f * this->plotConfiguration.topMargin; 
-        auto change = 1.0f - ((float) (th - textHeight) / th); 
+        auto change = (th != 0) ? 1.0f - ((float) (th - textHeight) / th) : 1.0f; 
 
-        auto textWidth = change * tw; //(this->plotConfiguration.plotWidth < 200) ? 0.33f * this->plotConfiguration.plotWidth : 200; 
+        auto textWidth = change * tw; 
 
         SDL_Rect textRect; 
         textRect.x = (this->plotConfiguration.plotWidth - textWidth) / 2;
         textRect.y = (this->plotConfiguration.topMargin - textHeight) / 2; 
-        textRect.w = textWidth; 
-        textRect.h = textHeight;  
+        textRect.w = tw;//textWidth; 
+        textRect.h = th;//textHeight;  
         
         // draw titles 
         SDL_RenderCopy(this->renderer, this->titleTextTexture, nullptr, &textRect); 
@@ -209,11 +216,10 @@ private:
         SDL_QueryTexture(this->xAxisTextTexture, NULL, NULL, &tw, &th); 
 
         textHeight = 0.4f * this->plotConfiguration.bottomMargin; 
-        change = 1.0f - ((float) (th - textHeight) / th); 
+        change = (th != 0) ? 1.0f - ((float) (th - textHeight) / th) : 1.0f; 
 
-        textWidth = change * tw; //(this->plotConfiguration.plotWidth < 200) ? 0.33f * this->plotConfiguration.plotWidth : 200; 
-
-        textRect; 
+        textWidth = change * tw; 
+ 
         textRect.x = (this->plotConfiguration.plotWidth - textWidth) / 2;
         textRect.y = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin + (textHeight / 2); 
         textRect.w = textWidth; 
@@ -226,11 +232,10 @@ private:
         SDL_QueryTexture(this->leftYAxisTextTexture, NULL, NULL, &tw, &th); 
         
         textHeight = 0.4f * this->plotConfiguration.leftMargin; 
-        change = 1.0f - ((float) (th - textHeight) / th); 
+        change = (th != 0) ? 1.0f - ((float) (th - textHeight) / th) : 1.0f; 
 
-        textWidth = change * tw; //(this->plotConfiguration.plotWidth < 200) ? 0.33f * this->plotConfiguration.plotWidth : 200; 
+        textWidth = change * tw;
 
-        textRect; 
         textRect.x = (this->plotConfiguration.leftMargin - textWidth) / 2;
         textRect.y = (this->plotConfiguration.plotHeight - textHeight) / 2; 
         textRect.w = textWidth; 
@@ -240,6 +245,44 @@ private:
 
         // draw titles 
         SDL_RenderCopyEx(this->renderer, this->leftYAxisTextTexture, nullptr, &textRect, -90.0f, nullptr, SDL_FLIP_NONE); 
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Name: DrawAxisIncrements
+    // Desc:
+    //------------------------------------------------------------------------------------------------------------------
+    void DrawAxisIncrements(const DrawGridInfo& drawGridInfo) {
+        
+        SDL_SetRenderDrawColor(this->renderer, 0xFF, 0xFF, 0xFF, 0xFF);         
+        
+        auto fy = [] (const DrawIntervalInfo& info) 
+        {
+            auto x1 = info.x;
+            auto y1 = info.y; 
+
+            SDL_RenderDrawLine(info.renderer, x1, y1, x1 + 5, y1);
+        };
+
+        auto fx = [] (const DrawIntervalInfo& info) 
+        {
+            auto x1 = info.x;
+            auto y1 = info.y; 
+
+            SDL_RenderDrawLine(info.renderer, x1, y1, x1, y1 - 5);
+        };
+
+        DrawOnRepeatingInterval(this->renderer, 
+            this->plotConfiguration.leftMargin, this->plotConfiguration.topMargin, 
+            this->plotConfiguration.leftMargin, this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin,
+            drawGridInfo.yCount + 1, 0.0, false, true, fy); 
+
+        DrawOnRepeatingInterval(this->renderer, 
+            this->plotConfiguration.leftMargin,  // x1
+            this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin,  // y1
+            this->plotConfiguration.plotWidth - this->plotConfiguration.rightMargin,  // x2
+            this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin, // y2
+            
+            drawGridInfo.xCount + 1, 0.0, false, true, fx); 
     }
 
     //------------------------------------------------------------------------------------------------------------------
