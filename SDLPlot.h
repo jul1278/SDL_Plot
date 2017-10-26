@@ -69,8 +69,6 @@ class SDLPlot {
     SDL_Renderer* renderer; 
     SDL_Texture* texture;
 
-    TTF_Font* font; 
-
     SDL_Texture* titleTextTexture;
     SDL_Texture* xAxisTextTexture;
     SDL_Texture* leftYAxisTextTexture;
@@ -91,23 +89,48 @@ class SDLPlot {
 public:
 
     //------------------------------------------------------------------------------------------------------------------
-    // Name:
+    // Name: SDLPlot
     // Desc:
     //------------------------------------------------------------------------------------------------------------------
     SDLPlot(SDL_Renderer* renderer, SDL_Texture* texture, const SDLPlotConfiguration& configuration) 
         : renderer(renderer), texture(texture), plotConfiguration(configuration) 
     {
-        this->font = TTF_OpenFont("OxygenMono-Regular.ttf", 30); 
+        auto font = TTF_OpenFont("OxygenMono-Regular.ttf", 30); 
 
         SDL_Color color = {0xff, 0xff, 0xff, 0xff};
-        SDL_Surface* textSurface = TTF_RenderText_Solid(this->font, "Plot Title", color); 
+        auto textSurface = TTF_RenderText_Solid(font, "Plot Title", color); 
         this->titleTextTexture = SDL_CreateTextureFromSurface(this->renderer, textSurface); 
+        
+        SDL_FreeSurface(textSurface);
+        TTF_CloseFont(font);
+        
+        font = TTF_OpenFont("OxygenMono-Regular.ttf", 40);
+
+        textSurface = TTF_RenderText_Solid(font, "Y Axis", color); 
+        this->leftYAxisTextTexture = SDL_CreateTextureFromSurface(this->renderer, textSurface);
+        SDL_FreeSurface(textSurface);
+
+        textSurface = TTF_RenderText_Solid(font, "X Axis", color); 
+        this->xAxisTextTexture = SDL_CreateTextureFromSurface(this->renderer, textSurface);
+        
+        TTF_CloseFont(font); 
+        SDL_FreeSurface(textSurface);
     }
 
-    ~SDLPlot() {}
+    //------------------------------------------------------------------------------------------------------------------
+    // Name: ~SDLPlot
+    // Desc:
+    //------------------------------------------------------------------------------------------------------------------
+    ~SDLPlot() 
+    {
+        SDL_DestroyTexture(this->titleTextTexture);
+        SDL_DestroyTexture(this->leftYAxisTextTexture);
+        SDL_DestroyTexture(this->rightYAxisTextTexture);
+        SDL_DestroyTexture(this->texture);
+    }
 
     //------------------------------------------------------------------------------------------------------------------
-    // Name:
+    // Name: Draw
     // Desc:
     //------------------------------------------------------------------------------------------------------------------
     void Draw() {
@@ -143,6 +166,28 @@ public:
         auto y = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin; 
         SDL_RenderDrawLine(this->renderer, this->plotConfiguration.leftMargin, y, x2, y); 
 
+        // draw titles
+        this->DrawTitles();
+        
+        // TODO: draw annotation/captions etc
+
+        SDL_RenderCopy(this->renderer, this->texture, nullptr, nullptr); 
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------
+    // Name: Plot
+    // Desc:
+    //-------------------------------------------------------------------------------------------------------------------
+    void Plot(const std::vector<int>& xData, const std::vector<int>& yData) {
+
+    }
+
+private:
+    //------------------------------------------------------------------------------------------------------------------
+    // Name: DrawTitles
+    // Desc:
+    //------------------------------------------------------------------------------------------------------------------
+    bool DrawTitles() {
         int tw, th; 
         SDL_QueryTexture(this->titleTextTexture, NULL, NULL, &tw, &th); 
 
@@ -160,25 +205,45 @@ public:
         // draw titles 
         SDL_RenderCopy(this->renderer, this->titleTextTexture, nullptr, &textRect); 
 
-        // draw data onto plot
+        // x axis
+        SDL_QueryTexture(this->xAxisTextTexture, NULL, NULL, &tw, &th); 
 
-        // TODO: draw annotation/captions etc
+        textHeight = 0.4f * this->plotConfiguration.bottomMargin; 
+        change = 1.0f - ((float) (th - textHeight) / th); 
 
-        SDL_RenderCopy(this->renderer, this->texture, nullptr, nullptr); 
+        textWidth = change * tw; //(this->plotConfiguration.plotWidth < 200) ? 0.33f * this->plotConfiguration.plotWidth : 200; 
+
+        textRect; 
+        textRect.x = (this->plotConfiguration.plotWidth - textWidth) / 2;
+        textRect.y = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin + (textHeight / 2); 
+        textRect.w = textWidth; 
+        textRect.h = textHeight; 
+
+        // draw titles 
+        SDL_RenderCopy(this->renderer, this->xAxisTextTexture, nullptr, &textRect); 
+
+        // left y axis
+        SDL_QueryTexture(this->leftYAxisTextTexture, NULL, NULL, &tw, &th); 
+        
+        textHeight = 0.4f * this->plotConfiguration.leftMargin; 
+        change = 1.0f - ((float) (th - textHeight) / th); 
+
+        textWidth = change * tw; //(this->plotConfiguration.plotWidth < 200) ? 0.33f * this->plotConfiguration.plotWidth : 200; 
+
+        textRect; 
+        textRect.x = (this->plotConfiguration.leftMargin - textWidth) / 2;
+        textRect.y = (this->plotConfiguration.plotHeight - textHeight) / 2; 
+        textRect.w = textWidth; 
+        textRect.h = textHeight; 
+
+        SDL_Point center = {this->plotConfiguration.leftMargin / 2, this->plotConfiguration.plotHeight / 2}; 
+
+        // draw titles 
+        SDL_RenderCopyEx(this->renderer, this->leftYAxisTextTexture, nullptr, &textRect, -90.0f, nullptr, SDL_FLIP_NONE); 
     }
-
-    //-------------------------------------------------------------------------------------------------------------------
-    // Name:
-    // Desc:
-    //-------------------------------------------------------------------------------------------------------------------
-    void Plot(const std::vector<int>& xData, const std::vector<int>& yData) {
-
-    }
-
-private:
 
     //------------------------------------------------------------------------------------------------------------------
-    // Name:
+    // Name: ValidateConfig
     // Desc:
     //------------------------------------------------------------------------------------------------------------------
     bool ValidateConfig() {
@@ -200,9 +265,6 @@ private:
     // Desc:
     //------------------------------------------------------------------------------------------------------------------
     void PlotData() {
-        for (auto series : this->dataSeries) {
-
-        }
     }
 };
 
