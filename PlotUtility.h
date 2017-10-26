@@ -202,25 +202,47 @@ void DrawGrid(SDL_Renderer* renderer, const DrawGridInfo& drawGridInfo) {
 
     // TODO: fix division by zero below 
 
-    unsigned int xSpacing = (drawGridInfo.width - drawGridInfo.x) / (drawGridInfo.xCount - 1); 
-    unsigned int ySpacing = (drawGridInfo.height - drawGridInfo.y) / (drawGridInfo.yCount - 1);
+    float xSpacingf = (float) (drawGridInfo.width - drawGridInfo.x) / (drawGridInfo.xCount - 1); 
+    float ySpacingf = (float) (drawGridInfo.height - drawGridInfo.y) / (drawGridInfo.yCount - 1);
+
+    unsigned int xSpacing = xSpacingf;
+    unsigned int ySpacing = ySpacingf; 
+
+    float diffX = xSpacingf - xSpacing;
+    float diffY = ySpacingf - ySpacing; 
+
+    float accum = drawGridInfo.x; 
 
     for (auto x = drawGridInfo.x; x <= drawGridInfo.width; x += xSpacing) {
-        
+
+        if (accum > x) {
+            x++; 
+        }
+
         if (drawGridInfo.dotted) {
             DrawDottedLine(renderer, drawGridInfo.color, x, drawGridInfo.y, x, drawGridInfo.height, 10, 5);
         } else {
             SDL_RenderDrawLine(renderer, x, drawGridInfo.y, x, drawGridInfo.height); 
         }
-    }
 
-    for (auto y = drawGridInfo.y; y <= (drawGridInfo.height + drawGridInfo.y); y += ySpacing) {
-        
+        accum += xSpacingf; 
+    }
+    
+    accum = drawGridInfo.y; 
+
+    for (auto y = drawGridInfo.y; y <= drawGridInfo.height; y += ySpacing) {
+
+        if (accum > y) {
+            y++; 
+        }
+
         if (drawGridInfo.dotted) {
             DrawDottedLine(renderer, drawGridInfo.color, drawGridInfo.x, y, drawGridInfo.width, y, 10, 5);
         } else {
             SDL_RenderDrawLine(renderer, drawGridInfo.x, y, drawGridInfo.width, y);
         }
+
+        accum += ySpacingf; 
     }
 }
 

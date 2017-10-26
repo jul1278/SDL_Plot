@@ -126,8 +126,8 @@ public:
         gridInfo.y = this->plotConfiguration.topMargin; 
         gridInfo.width = this->plotConfiguration.plotWidth - this->plotConfiguration.rightMargin; 
         gridInfo.height = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin;
-        gridInfo.xCount = 3; 
-        gridInfo.yCount = 3;
+        gridInfo.xCount = 12; 
+        gridInfo.yCount = 12;
         gridInfo.dotted = false; 
 
         DrawGrid(this->renderer, gridInfo); 
@@ -143,8 +143,13 @@ public:
         auto y = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin; 
         SDL_RenderDrawLine(this->renderer, this->plotConfiguration.leftMargin, y, x2, y); 
 
-        auto textWidth = (this->plotConfiguration.plotWidth < 200) ? 0.33f * this->plotConfiguration.plotWidth : 200; 
+        int tw, th; 
+        SDL_QueryTexture(this->titleTextTexture, NULL, NULL, &tw, &th); 
+
         auto textHeight = 0.8f * this->plotConfiguration.topMargin; 
+        auto change = 1.0f - ((float) (th - textHeight) / th); 
+
+        auto textWidth = change * tw; //(this->plotConfiguration.plotWidth < 200) ? 0.33f * this->plotConfiguration.plotWidth : 200; 
 
         SDL_Rect textRect; 
         textRect.x = (this->plotConfiguration.plotWidth - textWidth) / 2;
@@ -153,7 +158,7 @@ public:
         textRect.h = textHeight;  
         
         // draw titles 
-        SDL_RenderCopy(this->renderer, this->titleTextTexture, NULL, &textRect); 
+        SDL_RenderCopy(this->renderer, this->titleTextTexture, nullptr, &textRect); 
 
         // draw data onto plot
 
