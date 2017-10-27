@@ -86,6 +86,46 @@ SDLInfo SetupSDL(int windowWidth, int windowHeight) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------
+// Name: Update
+// Desc:
+//---------------------------------------------------------------------------------------------------------------------------------------------------
+void Update(const SDLInfo& sdlInfo, std::vector<double>& plotData) {
+    
+    int windowWidth;
+    int windowHeight; 
+    
+    SDL_SetRenderDrawColor(sdlInfo.renderer, 0x2f, 0x2f, 0x2f, 0xff);
+    SDL_RenderClear(sdlInfo.renderer);
+
+    SDL_GetWindowSize(sdlInfo.window, &windowWidth, &windowHeight); 
+
+    auto texture = SDL_CreateTexture(sdlInfo.renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, windowWidth, windowHeight);
+
+    SDLPlotConfiguration config; 
+    config.leftMargin = 50; 
+    config.rightMargin = 50;
+    config.topMargin = 50;
+    config.bottomMargin = 50; 
+    config.plotWidth = windowWidth;
+    config.plotHeight = windowHeight; 
+
+    SDLPlot plot(sdlInfo.renderer, texture, config); 
+    plot.Draw(); 
+
+    // detach render target
+    SDL_SetRenderTarget(sdlInfo.renderer, nullptr); 
+
+    // now render texture to the screen
+    SDL_RenderCopyEx(sdlInfo.renderer, texture, nullptr, nullptr, 0, nullptr, SDL_FLIP_NONE); 
+
+    SDL_Color color = {0x00, 0xff, 0x00, 0xff};
+    plot.Plot(plotData, color); 
+
+    SDL_RenderPresent(sdlInfo.renderer);
+    SDL_DestroyTexture(texture);  
+}
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------
 // Name: main
 // Desc:
 //---------------------------------------------------------------------------------------------------------------------------------------------------
@@ -100,7 +140,8 @@ int main(int argc, char* argv[]) {
         return 0; 
     }
 
-    auto plotData = GenerateRandomWalk(200, 0.8, 0.05, 0.05); 
+    auto plotData = GenerateRandomWalk(200, 0.8, 0.05, 0.1); 
+    Update(sdlInfo, plotData); 
 
     // Main loop
     while(1) {
@@ -110,35 +151,7 @@ int main(int argc, char* argv[]) {
         if(SDL_PollEvent(&event)) {
 
             if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                SDL_SetRenderDrawColor(sdlInfo.renderer, 0x2f, 0x2f, 0x2f, 0xff);
-                SDL_RenderClear(sdlInfo.renderer);
-
-                SDL_GetWindowSize(sdlInfo.window, &windowWidth, &windowHeight); 
-
-                auto texture = SDL_CreateTexture(sdlInfo.renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, windowWidth, windowHeight);
-
-                SDLPlotConfiguration config; 
-                config.leftMargin = 50; 
-                config.rightMargin = 50;
-                config.topMargin = 50;
-                config.bottomMargin = 50; 
-                config.plotWidth = windowWidth;
-                config.plotHeight = windowHeight; 
-            
-                SDLPlot plot(sdlInfo.renderer, texture, config); 
-                plot.Draw(); 
-            
-                // detach render target
-                SDL_SetRenderTarget(sdlInfo.renderer, nullptr); 
-            
-                // now render texture to the screen
-                SDL_RenderCopyEx(sdlInfo.renderer, texture, nullptr, nullptr, 0, nullptr, SDL_FLIP_NONE); 
-
-                SDL_Color color = {0x00, 0xff, 0x00, 0xff};
-                plot.Plot(plotData, color); 
-
-                SDL_RenderPresent(sdlInfo.renderer);
-                SDL_DestroyTexture(texture);                 
+                Update(sdlInfo, plotData); 
             }
 
             if (event.type == SDL_QUIT) {
