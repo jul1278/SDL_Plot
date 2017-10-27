@@ -6,6 +6,10 @@
 #include <exception>
 #include <cstring>
 #include <functional>
+#include <vector>
+#include <cmath>
+#include <random>
+#include <ctime>
 
 #include "SDL.h"
 
@@ -319,5 +323,39 @@ void DrawOnRepeatingInterval(
         yAccum += ySpacef; 
     }
 }
+
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------
+// Name: GenerateRandomWalk
+// Desc: 
+//---------------------------------------------------------------------------------------------------------------------------------------------------
+std::vector<double> GenerateRandomWalk(int n, double phi, double stddev, double mean) {
+    std::random_device rd; 
+    std::mt19937 gen((unsigned long) time(0)); 
+
+    std::normal_distribution<double> d(mean, stddev); 
+    std::vector<double> rw(n); 
+
+    for (auto i = 0; i < n; i++) {   
+        auto rn = d(gen);  
+        rw[i] += rn + phi*rw[i-1]; 
+    }
+
+    return rw; 
+}
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------
+// Name: GenerateLine
+// Desc: 
+//---------------------------------------------------------------------------------------------------------------------------------------------------
+std::vector<double> GenerateLine(int n, double m, double b) {
+    std::vector<double> line(n); 
+    for (auto x = 0; x < n; x++) {
+        line[x] = (x * m) + b; 
+    }
+
+    return line;
+}
+
 
 #endif // PLOTUTILITY_H

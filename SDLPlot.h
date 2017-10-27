@@ -6,6 +6,7 @@
 #include <vector>
 #include <list>
 #include <tuple>
+#include <algorithm>
 
 #include "PlotUtility.h"
 #include "SDL.h"
@@ -74,6 +75,8 @@ class SDLPlot {
     SDL_Texture* leftYAxisTextTexture;
     SDL_Texture* rightYAxisTextTexture;
 
+    DrawGridInfo gridInfo; 
+
 
     struct Series {
         std::vector<int> xData;  
@@ -115,6 +118,15 @@ public:
         
         TTF_CloseFont(font); 
         SDL_FreeSurface(textSurface);
+
+        this->gridInfo.color = 0x4f4f4fff;  
+        this->gridInfo.x = this->plotConfiguration.leftMargin;
+        this->gridInfo.y = this->plotConfiguration.topMargin; 
+        this->gridInfo.width = this->plotConfiguration.plotWidth - this->plotConfiguration.rightMargin; 
+        this->gridInfo.height = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin;
+        this->gridInfo.xCount = 12; 
+        this->gridInfo.yCount = 12;
+        this->gridInfo.dotted = false; 
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -142,18 +154,9 @@ public:
         SDL_SetRenderTarget(this->renderer, this->texture); 
         SDL_RenderClear(this->renderer); 
 
-        // draw grid
-        DrawGridInfo gridInfo;
-        gridInfo.color = 0x4f4f4fff;  
-        gridInfo.x = this->plotConfiguration.leftMargin;
-        gridInfo.y = this->plotConfiguration.topMargin; 
-        gridInfo.width = this->plotConfiguration.plotWidth - this->plotConfiguration.rightMargin; 
-        gridInfo.height = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin;
-        gridInfo.xCount = 12; 
-        gridInfo.yCount = 12;
-        gridInfo.dotted = false; 
 
-        DrawGrid(this->renderer, gridInfo); 
+
+        DrawGrid(this->renderer, this->gridInfo); 
 
         SDL_SetRenderDrawColor(this->renderer, 0xFF, 0xFF, 0xFF, 0xFF); 
 
@@ -167,7 +170,7 @@ public:
         SDL_RenderDrawLine(this->renderer, this->plotConfiguration.leftMargin, y, x2, y); 
 
         // draw spikes on axis
-        this->DrawAxisIncrements(gridInfo);
+        this->DrawAxisIncrements(this->gridInfo);
 
         // draw titles
         this->DrawTitles();
@@ -181,8 +184,36 @@ public:
     // Name: Plot
     // Desc:
     //-------------------------------------------------------------------------------------------------------------------
-    void Plot(const std::vector<int>& xData, const std::vector<int>& yData) {
+    void Plot(const std::vector<double>& yData, SDL_Color color) {
+        auto min = std::min_element(yData.begin(), yData.end());
+        auto max = std::max_element(yData.begin(), yData.end());
         
+        auto diff = *max - *min; 
+        
+        auto plotAreaHeight = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin - this->plotConfiguration.topMargin; 
+        auto plotAreaWidth = this->plotConfiguration.plotWidth - this->plotConfiguration.leftMargin - this->plotConfiguration.rightMargin; 
+
+        auto yDataScaled = yData; 
+
+        std::transform(yDataScaled.begin(), yDataScaled.end(), yDataScaled.begin(), [plotAreaHeight, min, max] (float y) { return (double) plotAreaHeight * ((y - *min) / *max); } ); 
+
+        // so far assuming that there are more pixels than data points; 
+        auto xSpace = plotAreaWidth / yDataScaled.size(); 
+
+        SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a); 
+
+        auto yFlipTransform = this->plotConfiguration.plotHeight - this->plotConfiguration.bottomMargin;
+
+        for (auto i = 1; i < yDataScaled.size(); i++) {
+
+            auto x1 = (i-1) * xSpace; 
+            auto y1 = yFlipTransform - (int) yDataScaled[i - 1];
+
+            auto x2 = i * xSpace; 
+            auto y2 = yFlipTransform - (int) yDataScaled[i];
+
+            SDL_RenderDrawLine(this->renderer, x1 + this->plotConfiguration.leftMargin, y1, x2 + this->plotConfiguration.leftMargin, y2); 
+        }
     }
 
 private:

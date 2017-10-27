@@ -24,6 +24,9 @@ struct SDLInfo {
     void CleanUp() {
         SDL_DestroyWindow(this->window);
         SDL_DestroyRenderer(this->renderer);
+
+        TTF_Quit(); 
+
         SDL_Quit(); 
     }
 
@@ -97,6 +100,8 @@ int main(int argc, char* argv[]) {
         return 0; 
     }
 
+    auto plotData = GenerateRandomWalk(200, 0.8, 0.05, 0.05); 
+
     // Main loop
     while(1) {
 
@@ -128,6 +133,9 @@ int main(int argc, char* argv[]) {
             
                 // now render texture to the screen
                 SDL_RenderCopyEx(sdlInfo.renderer, texture, nullptr, nullptr, 0, nullptr, SDL_FLIP_NONE); 
+
+                SDL_Color color = {0x00, 0xff, 0x00, 0xff};
+                plot.Plot(plotData, color); 
 
                 SDL_RenderPresent(sdlInfo.renderer);
                 SDL_DestroyTexture(texture);                 
