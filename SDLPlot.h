@@ -6,6 +6,7 @@
 #include <vector>
 #include <list>
 #include <tuple>
+#include <unordered_map>
 #include <algorithm>
 
 #include "PlotUtility.h"
@@ -70,13 +71,14 @@ class SDLPlot {
     SDL_Renderer* renderer; 
     SDL_Texture* texture;
 
-    SDL_Texture* titleTextTexture;
-    SDL_Texture* xAxisTextTexture;
-    SDL_Texture* leftYAxisTextTexture;
-    SDL_Texture* rightYAxisTextTexture;
+    typedef std::unique_ptr<SDL_Texture, std::function<void(SDL_Texture*)>> sdl_texture_ptr; 
+
+    sdl_texture_ptr titleTextTexture;
+    sdl_texture_ptr xAxisTextTexture;
+    sdl_texture_ptr leftYAxisTextTexture;
+    sdl_texture_ptr rightYAxisTextTexture;
 
     DrawGridInfo gridInfo; 
-
 
     struct Series {
         std::vector<int> xData;  
@@ -98,27 +100,11 @@ public:
     SDLPlot(SDL_Renderer* renderer, SDL_Texture* texture, const SDLPlotConfiguration& configuration) 
         : renderer(renderer), texture(texture), plotConfiguration(configuration) 
     {
-        auto font = TTF_OpenFont("OxygenMono-Regular.ttf", 30); 
-
         SDL_Color color = {0xff, 0xff, 0xff, 0xff};
-        auto textSurface = TTF_RenderText_Solid(font, "Plot Title", color); 
-        this->titleTextTexture = SDL_CreateTextureFromSurface(this->renderer, textSurface); 
+        this->titleTextTexture = RenderTextToTexture(this->renderer, "OxygenMono-Regular.ttf", 30, "Plot Title", color); 
+        this->leftYAxisTextTexture = RenderTextToTexture(this->renderer, "OxygenMono-Regular.ttf", 15, "Left Y Axis", color); 
+        this->xAxisTextTexture = RenderTextToTexture(this->renderer, "OxygenMono-Regular.ttf", 15, "X Axis", color); 
         
-        SDL_FreeSurface(textSurface);
-        TTF_CloseFont(font);
-        
-        font = TTF_OpenFont("OxygenMono-Regular.ttf", 15);
-
-        textSurface = TTF_RenderText_Solid(font, "Y Axis", color); 
-        this->leftYAxisTextTexture = SDL_CreateTextureFromSurface(this->renderer, textSurface);
-        SDL_FreeSurface(textSurface);
-
-        textSurface = TTF_RenderText_Solid(font, "X Axis", color); 
-        this->xAxisTextTexture = SDL_CreateTextureFromSurface(this->renderer, textSurface);
-        
-        TTF_CloseFont(font); 
-        SDL_FreeSurface(textSurface);
-
         this->gridInfo.color = 0x4f4f4fff;  
         this->gridInfo.x = this->plotConfiguration.leftMargin;
         this->gridInfo.y = this->plotConfiguration.topMargin; 
@@ -135,9 +121,6 @@ public:
     //------------------------------------------------------------------------------------------------------------------
     ~SDLPlot() 
     {
-        SDL_DestroyTexture(this->titleTextTexture);
-        SDL_DestroyTexture(this->leftYAxisTextTexture);
-        SDL_DestroyTexture(this->rightYAxisTextTexture);
         SDL_DestroyTexture(this->texture);
     }
 
@@ -153,8 +136,6 @@ public:
 
         SDL_SetRenderTarget(this->renderer, this->texture); 
         SDL_RenderClear(this->renderer); 
-
-
 
         DrawGrid(this->renderer, this->gridInfo); 
 
@@ -195,9 +176,16 @@ public:
 
         auto yDataScaled = yData; 
 
-        std::transform(yDataScaled.begin(), yDataScaled.end(), yDataScaled.begin(), [plotAreaHeight, min, max] (float y) { return (double) plotAreaHeight * ((y - *min) / *max); } ); 
+        std::transform(yDataScaled.begin(), yDataScaled.end(), yDataScaled.begin(), 
+            [plotAreaHeight, min, max] 
+            (float y) 
+            { 
+                return (double) plotAreaHeight * ((y - *min) / (*max - *min) ); 
+            } 
+        ); 
 
         // so far assuming that there are more pixels than data points; 
+        // how to handle opposite case? it actually seems to work okay when you scale it really small so idk
         auto xSpace = plotAreaWidth / yDataScaled.size(); 
 
         SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a); 
@@ -227,7 +215,7 @@ private:
         // TODO: factor out some functions here
 
         int tw, th; 
-        SDL_QueryTexture(this->titleTextTexture, NULL, NULL, &tw, &th); 
+        SDL_QueryTexture(this->titleTextTexture.get(), NULL, NULL, &tw, &th); 
 
         auto textHeight = 0.8f * this->plotConfiguration.topMargin; 
         auto change = (th != 0) ? 1.0f - ((float) (th - textHeight) / th) : 1.0f; 
@@ -237,14 +225,14 @@ private:
         SDL_Rect textRect; 
         textRect.x = (this->plotConfiguration.plotWidth - textWidth) / 2;
         textRect.y = (this->plotConfiguration.topMargin - textHeight) / 2; 
-        textRect.w = tw;//textWidth; 
-        textRect.h = th;//textHeight;  
+        textRect.w = tw; 
+        textRect.h = th;  
         
         // draw titles 
-        SDL_RenderCopy(this->renderer, this->titleTextTexture, nullptr, &textRect); 
+        SDL_RenderCopy(this->renderer, this->titleTextTexture.get(), nullptr, &textRect); 
 
         // x axis
-        SDL_QueryTexture(this->xAxisTextTexture, NULL, NULL, &tw, &th); 
+        SDL_QueryTexture(this->xAxisTextTexture.get(), NULL, NULL, &tw, &th); 
 
         textHeight = 0.4f * this->plotConfiguration.bottomMargin; 
         change = (th != 0) ? 1.0f - ((float) (th - textHeight) / th) : 1.0f; 
@@ -257,10 +245,10 @@ private:
         textRect.h = textHeight; 
 
         // draw titles 
-        SDL_RenderCopy(this->renderer, this->xAxisTextTexture, nullptr, &textRect); 
+        SDL_RenderCopy(this->renderer, this->xAxisTextTexture.get(), nullptr, &textRect); 
 
         // left y axis
-        SDL_QueryTexture(this->leftYAxisTextTexture, NULL, NULL, &tw, &th); 
+        SDL_QueryTexture(this->leftYAxisTextTexture.get(), NULL, NULL, &tw, &th); 
         
         textHeight = 0.4f * this->plotConfiguration.leftMargin; 
         change = (th != 0) ? 1.0f - ((float) (th - textHeight) / th) : 1.0f; 
@@ -275,7 +263,7 @@ private:
         SDL_Point center = {this->plotConfiguration.leftMargin / 2, this->plotConfiguration.plotHeight / 2}; 
 
         // draw titles 
-        SDL_RenderCopyEx(this->renderer, this->leftYAxisTextTexture, nullptr, &textRect, -90.0f, nullptr, SDL_FLIP_NONE); 
+        SDL_RenderCopyEx(this->renderer, this->leftYAxisTextTexture.get(), nullptr, &textRect, -90.0f, nullptr, SDL_FLIP_NONE); 
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -332,13 +320,6 @@ private:
         } 
 
         return true; 
-    }
-
-    //------------------------------------------------------------------------------------------------------------------
-    // Name:
-    // Desc:
-    //------------------------------------------------------------------------------------------------------------------
-    void PlotData() {
     }
 };
 

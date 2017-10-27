@@ -5,6 +5,7 @@
 #include <iostream>
 #include <exception>
 #include <cstring>
+#include <memory>
 #include <functional>
 #include <vector>
 #include <cmath>
@@ -12,6 +13,7 @@
 #include <ctime>
 
 #include "SDL.h"
+#include "SDL_ttf.h"
 
 /* SDL interprets each pixel as a 32-bit number, so our masks must depend
     on the endianness (byte order) of the machine */
@@ -200,8 +202,6 @@ void DrawDottedLine(
 
     SDL_FreeSurface(surface);
     SDL_DestroyTexture(texture); 
-
-    return;
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------
@@ -275,6 +275,7 @@ void DrawOnRepeatingInterval(
     std::function<void(const DrawIntervalInfo& info)> func
 ) {
 
+    // todo: implement perpendicular to tangent function
     // todo: swawp x1 x2 y1 y2 if greater
 
     auto adjustCount = (includeEndPoints) ? count - 2 : count; 
@@ -297,7 +298,7 @@ void DrawOnRepeatingInterval(
         y += ySpace; 
     }
     
-    struct DrawIntervalInfo drawIntervalInfo ;
+    struct DrawIntervalInfo drawIntervalInfo;
 
     for (auto i = 0; i < count; i++) {
 
@@ -324,6 +325,23 @@ void DrawOnRepeatingInterval(
     }
 }
 
+//---------------------------------------------------------------------------------------------------------------------------------------------------
+// Name: RenderText
+// Desc: 
+//---------------------------------------------------------------------------------------------------------------------------------------------------
+std::unique_ptr<SDL_Texture, std::function<void(SDL_Texture*)>> RenderTextToTexture(SDL_Renderer* renderer, const std::string& fontName, unsigned int size, const std::string& text, SDL_Color color) {
+
+    auto font = TTF_OpenFont(fontName.c_str(), size); 
+    auto textSurface = TTF_RenderText_Solid(font, text.c_str(), color); 
+    auto textTexture = SDL_CreateTextureFromSurface(renderer, textSurface); 
+
+    SDL_FreeSurface(textSurface);
+    TTF_CloseFont(font); 
+
+    std::unique_ptr<SDL_Texture, std::function<void(SDL_Texture*)>> ptr(textTexture, [] (SDL_Texture* t) {SDL_DestroyTexture(t); } ); 
+
+    return ptr; 
+}
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------
 // Name: GenerateRandomWalk

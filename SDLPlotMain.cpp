@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
         return 0; 
     }
 
-    auto plotData = GenerateRandomWalk(200, 0.8, 0.05, 0.1); 
+    auto plotData = GenerateRandomWalk(600, 0.8, 0.05, 0.1); 
     Update(sdlInfo, plotData); 
 
     // Main loop
